@@ -1,0 +1,10 @@
+config {
+  type: "table",
+  name: "stg_team_mapping_auto"
+}
+
+SELECT
+  team_name,
+  country_code
+FROM
+  `project-be319738-ee9e-43d7-ada.selections.team_mapping_auto`

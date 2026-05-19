@@ -1,0 +1,20 @@
+config {
+  type: "table",
+  name: "int_team_weighted"
+}
+
+WITH elo AS (
+  SELECT
+    t.team_name,
+    e.elo_rating
+  FROM ${ref("stg_team_mapping_auto")} t
+  JOIN ${ref("stg_elo_rating_raw")} e
+    ON t.country_code = e.country_code
+)
+
+SELECT
+  team_name,
+  elo_rating,
+  POW(SAFE_DIVIDE(elo_rating, 2000), 4) AS weight
+FROM 
+  elo

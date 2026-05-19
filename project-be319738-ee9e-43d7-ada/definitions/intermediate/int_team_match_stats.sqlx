@@ -1,0 +1,166 @@
+config {
+  type: "table",
+  name: "int_team_match_stats"
+}
+
+WITH base AS (
+
+
+  -- HOME TEAM
+
+  SELECT
+    m.event_id,
+    m.match_timestamp,
+    m.tournament,
+
+    m.home_team AS team,
+    m.away_team AS opponent,
+
+  
+    -- RESULT
+
+    m.home_score AS goals_for,
+    m.away_score AS goals_against,
+
+
+    -- ATTACK
+
+    s.total_shots_home AS shots,
+    s.shots_on_target_home AS shots_on_target,
+    s.shots_inside_box_home AS shots_inside_box,
+    s.shots_outside_box_home AS shots_outside_box,
+    s.big_chances_home AS big_chances,
+    s.big_chances_scored_home AS big_chances_scored,
+    s.big_chances_missed_home AS big_chances_missed,
+    s.final_third_entries_home AS final_third_entries,
+
+
+    -- CONTROL
+
+    s.ball_possession_home AS possession,
+    SAFE_DIVIDE(s.accurate_passes_home, s.passes_home) AS pass_accuracy,
+    s.passes_home AS passes,
+    s.accurate_passes_home AS accurate_passes,
+
+
+    -- DEFENSE
+
+    s.shots_on_target_away AS shots_on_target_conceded,
+    s.shots_inside_box_away AS shots_inside_box_conceded,
+    s.big_chances_away AS big_chances_conceded,
+    s.final_third_entries_away AS final_third_entries_conceded,
+    s.goalkeeper_saves_home AS saves,
+    s.tackles_home AS tackles,
+    s.fouls_home AS fouls,
+    s.yellow_cards_home AS yellow_cards
+
+  FROM ${ref("stg_matches")} m
+  JOIN ${ref("stg_match_stats")} s USING(event_id)
+
+  WHERE m.status = 'finished'
+
+  UNION ALL
+
+
+  -- AWAY TEAM
+
+
+  SELECT
+    m.event_id,
+    m.match_timestamp,
+    m.tournament,
+
+    m.away_team AS team,
+    m.home_team AS opponent,
+
+
+    -- RESULT
+
+    m.away_score AS goals_for,
+    m.home_score AS goals_against,
+
+
+    -- ATTACK
+
+    s.total_shots_away AS shots,
+    s.shots_on_target_away AS shots_on_target,
+    s.shots_inside_box_away AS shots_inside_box,
+    s.shots_outside_box_away AS shots_outside_box,
+    s.big_chances_away AS big_chances,
+    s.big_chances_scored_away AS big_chances_scored,
+    s.big_chances_missed_away AS big_chances_missed,
+    s.final_third_entries_away AS final_third_entries,
+
+
+    -- CONTROL
+
+    s.ball_possession_away AS possession,
+    SAFE_DIVIDE(s.accurate_passes_away, s.passes_away) AS pass_accuracy,
+    s.passes_away AS passes,
+    s.accurate_passes_away AS accurate_passes,
+
+
+    -- DEFENSE
+
+    s.shots_on_target_home AS shots_on_target_conceded,
+    s.shots_inside_box_home AS shots_inside_box_conceded,
+    s.big_chances_home AS big_chances_conceded,
+    s.final_third_entries_home AS final_third_entries_conceded,
+    s.goalkeeper_saves_away AS saves,
+    s.tackles_away AS tackles,
+    s.fouls_away AS fouls,
+    s.yellow_cards_away AS yellow_cards
+
+  FROM ${ref("stg_matches")} m
+  JOIN ${ref("stg_match_stats")} s USING(event_id)
+
+  WHERE m.status = 'finished'
+
+),
+
+filter_games AS (
+
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY team
+      ORDER BY match_timestamp DESC
+    ) AS rn
+  FROM base
+
+)
+
+SELECT *
+FROM filter_games
+WHERE rn <= 20
+AND team IN (
+  'Argentina',
+  'Brazil',
+  'France',
+  'England',
+  'Spain',
+  'Germany',
+  'Portugal',
+  'Netherlands',
+  'Italy',
+  'Belgium',
+  'Croatia',
+  'Uruguay',
+  'Colombia',
+  'Morocco',
+  'Japan',
+  'Mexico',
+  'USA',
+  'Denmark',
+  'Switzerland',
+  'Austria',
+  'Serbia',
+  'Ukraine',
+  'Poland',
+  'Sweden',
+  'Norway',
+  'South Korea',
+  'Senegal',
+  'Nigeria',
+  'Ecuador'
+)

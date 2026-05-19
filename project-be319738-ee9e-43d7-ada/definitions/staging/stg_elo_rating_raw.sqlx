@@ -1,0 +1,11 @@
+config {
+  type: "table",
+  name: "stg_elo_rating_raw"
+}
+
+SELECT
+  rank,
+  country_code,
+  elo_rating
+FROM
+  `project-be319738-ee9e-43d7-ada.selections.elo_ratings_raw`

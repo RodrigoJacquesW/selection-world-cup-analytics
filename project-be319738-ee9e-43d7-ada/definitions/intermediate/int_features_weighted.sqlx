@@ -1,0 +1,109 @@
+config {
+  type: "table",
+  name: "int_team_features_weighted"
+}
+
+WITH elo AS (
+
+  SELECT
+    team_name,
+    elo_rating,
+
+    POW(
+      SAFE_DIVIDE(elo_rating, 2000),
+      4
+    ) AS weight
+
+  FROM ${ref("int_team_weighted")}
+
+),
+
+metrics AS (
+
+  SELECT
+    tf.*,
+
+    opp.elo_rating,
+    opp.weight
+
+  FROM ${ref("int_team_features")} AS tf
+
+  LEFT JOIN elo opp
+    ON tf.opponent = opp.team_name
+
+),
+
+metrics_weight AS (
+
+  SELECT
+    m.*,
+
+
+    -- 🔥 ATTACK
+
+    shots_inside_box * weight
+      AS shots_inside_box_w,
+
+    big_chances * weight
+      AS big_chances_w,
+
+    final_third_entries * weight
+      AS final_third_entries_w,
+
+
+    -- 🎯 EFFICIENCY
+
+    goal_conversion * weight
+      AS goal_conversion_w,
+
+    big_chance_conversion * weight
+      AS big_chance_conversion_w,
+
+    box_shot_ratio * weight
+      AS box_shot_ratio_w,
+
+
+    -- 🧱 DEFENSE
+
+    goals_against * weight
+      AS goals_against_w,
+
+    shots_on_target_conceded * weight
+      AS shots_on_target_conceded_w,
+
+    shots_inside_box_conceded * weight
+      AS shots_inside_box_conceded_w,
+
+    big_chances_conceded * weight
+      AS big_chances_conceded_w,
+
+    final_third_entries_conceded * weight
+      AS final_third_entries_conceded_w,
+
+
+    -- 🎮 CONTROL
+
+    possession * weight
+      AS possession_w,
+
+    possession_quality * weight
+      AS possession_quality_w,
+
+
+    -- 💎 ADVANCED
+  
+    big_chance_diff * weight
+      AS big_chance_diff_w,
+
+    offensive_dominance * weight
+      AS offensive_dominance_w,
+
+    territorial_dominance * weight
+      AS territorial_dominance_w
+
+  FROM metrics AS m
+
+)
+
+SELECT *
+FROM metrics_weight

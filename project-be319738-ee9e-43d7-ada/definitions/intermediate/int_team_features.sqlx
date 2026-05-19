@@ -1,0 +1,96 @@
+config {
+  type: "table",
+  name: "int_team_features"
+}
+
+SELECT
+  event_id,
+  match_timestamp,
+  tournament,
+  team,
+  opponent,
+
+
+  -- ⚽ MATCH OUTCOME
+
+  goals_for,
+  goals_against,
+
+  goals_for - goals_against
+    AS goal_difference,
+
+  -- 🔥 ATTACK
+
+  shots,
+  shots_on_target,
+  shots_inside_box,
+  shots_outside_box,
+
+  big_chances,
+  big_chances_scored,
+  big_chances_missed,
+
+  final_third_entries,
+
+
+  -- 🎯 EFFICIENCY
+
+
+  SAFE_DIVIDE(goals_for, shots)
+    AS goal_conversion,
+
+  SAFE_DIVIDE(shots_on_target, shots)
+    AS shot_accuracy,
+
+  SAFE_DIVIDE(big_chances_scored, big_chances)
+    AS big_chance_conversion,
+
+  SAFE_DIVIDE(shots_inside_box, shots)
+    AS box_shot_ratio,
+
+
+  -- 🧱 DEFENSE
+
+  shots_on_target_conceded,
+  shots_inside_box_conceded,
+  big_chances_conceded,
+  final_third_entries_conceded,
+
+
+  -- 🎮 CONTROL
+
+  possession,
+  pass_accuracy,
+  passes,
+  accurate_passes,
+
+
+  -- 💎 ADVANCED
+
+
+  SAFE_DIVIDE(
+    shots,
+    shots + shots_on_target_conceded
+  ) AS offensive_dominance,
+
+  big_chances - big_chances_conceded
+    AS big_chance_diff,
+
+  final_third_entries - final_third_entries_conceded
+    AS territorial_dominance,
+
+  goals_for - big_chances_scored
+    AS finishing_efficiency,
+
+  SAFE_DIVIDE(
+    accurate_passes,
+    passes
+  ) * possession
+    AS possession_quality,
+
+  SAFE_DIVIDE(
+    tackles,
+    tackles + fouls
+  ) AS defensive_aggression
+
+FROM ${ref("int_team_match_stats")}

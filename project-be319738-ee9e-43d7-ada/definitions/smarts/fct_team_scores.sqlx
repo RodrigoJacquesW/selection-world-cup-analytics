@@ -1,0 +1,278 @@
+config {
+  type: "table",
+  name: "fct_team_score"
+}
+
+WITH agg AS (
+
+  SELECT
+    team,
+
+
+    -- SAMPLE SIZE
+
+    COUNT(*) AS matches_played,
+
+
+    -- 🔥 ATTACK
+
+    SUM(shots_inside_box * weight) / SUM(weight)
+      AS shots_inside_box,
+
+    SUM(big_chances * weight) / SUM(weight)
+      AS big_chances,
+
+    SUM(final_third_entries * weight) / SUM(weight)
+      AS final_third_entries,
+
+    -- 🎯 EFFICIENCY
+
+    SUM(big_chance_conversion * weight) / SUM(weight)
+      AS big_chance_conversion,
+
+    SUM(box_shot_ratio * weight) / SUM(weight)
+      AS box_shot_ratio,
+
+
+    -- 🧱 DEFENSE
+
+    SUM(goals_against * weight) / SUM(weight)
+      AS goals_against,
+
+    SUM(big_chances_conceded * weight) / SUM(weight)
+      AS big_chances_conceded,
+
+    SUM(final_third_entries_conceded * weight) / SUM(weight)
+      AS final_third_entries_conceded,
+
+
+    -- 🎮 CONTROL
+
+    SUM(possession * weight) / SUM(weight)
+      AS possession,
+
+    SUM(possession_quality * weight) / SUM(weight)
+      AS possession_quality,
+
+
+    -- 💎 DIFFERENTIAL
+
+    SUM(big_chance_diff * weight) / SUM(weight)
+      AS big_chance_diff,
+
+
+    SUM(
+      SAFE_DIVIDE(
+        big_chances,
+        big_chances + big_chances_conceded
+      ) * weight
+    ) / SUM(weight)
+      AS offensive_dominance
+
+  FROM ${ref("int_team_features_weighted")}
+  GROUP BY team
+
+),
+
+zscore AS (
+
+  SELECT
+    team,
+    matches_played,
+
+
+    -- 🔥 ATTACK
+
+    SAFE_DIVIDE(
+      shots_inside_box - AVG(shots_inside_box) OVER(),
+      STDDEV_POP(shots_inside_box) OVER()
+    ) AS shots_inside_box_z,
+
+    SAFE_DIVIDE(
+      big_chances - AVG(big_chances) OVER(),
+      STDDEV_POP(big_chances) OVER()
+    ) AS big_chances_z,
+
+    SAFE_DIVIDE(
+      final_third_entries - AVG(final_third_entries) OVER(),
+      STDDEV_POP(final_third_entries) OVER()
+    ) AS final_third_entries_z,
+
+
+    -- 🎯 EFFICIENCY
+
+    SAFE_DIVIDE(
+      big_chance_conversion - AVG(big_chance_conversion) OVER(),
+      STDDEV_POP(big_chance_conversion) OVER()
+    ) AS big_chance_conversion_z,
+
+    SAFE_DIVIDE(
+      box_shot_ratio - AVG(box_shot_ratio) OVER(),
+      STDDEV_POP(box_shot_ratio) OVER()
+    ) AS box_shot_ratio_z,
+
+    -- 🧱 DEFENSE
+
+    SAFE_DIVIDE(
+      AVG(goals_against) OVER() - goals_against,
+      STDDEV_POP(goals_against) OVER()
+    ) AS goals_against_z,
+
+    SAFE_DIVIDE(
+      AVG(big_chances_conceded) OVER() - big_chances_conceded,
+      STDDEV_POP(big_chances_conceded) OVER()
+    ) AS big_chances_conceded_z,
+
+    SAFE_DIVIDE(
+      AVG(final_third_entries_conceded) OVER() - final_third_entries_conceded,
+      STDDEV_POP(final_third_entries_conceded) OVER()
+    ) AS final_third_entries_conceded_z,
+
+
+    -- 🎮 CONTROL
+
+    SAFE_DIVIDE(
+      possession - AVG(possession) OVER(),
+      STDDEV_POP(possession) OVER()
+    ) AS possession_z,
+
+    SAFE_DIVIDE(
+      possession_quality - AVG(possession_quality) OVER(),
+      STDDEV_POP(possession_quality) OVER()
+    ) AS possession_quality_z,
+
+
+    -- 💎 DIFFERENTIAL
+
+    SAFE_DIVIDE(
+      big_chance_diff - AVG(big_chance_diff) OVER(),
+      STDDEV_POP(big_chance_diff) OVER()
+    ) AS big_chance_diff_z,
+
+    SAFE_DIVIDE(
+      offensive_dominance - AVG(offensive_dominance) OVER(),
+      STDDEV_POP(offensive_dominance) OVER()
+    ) AS offensive_dominance_z
+
+  FROM agg
+
+),
+
+final AS (
+
+  SELECT
+    team,
+    matches_played,
+
+
+    -- 🔥 ATTACK
+
+    ROUND((
+      shots_inside_box_z +
+      big_chances_z +
+      final_third_entries_z
+    ) / 3, 3) AS attack,
+
+
+    -- 🎯 EFFICIENCY
+
+    ROUND((
+      big_chance_conversion_z +
+      box_shot_ratio_z
+    ) / 2, 3) AS efficiency,
+
+   
+    -- 🧱 DEFENSE
+  
+    ROUND((
+      goals_against_z +
+      big_chances_conceded_z +
+      final_third_entries_conceded_z
+    ) / 3, 3) AS defense,
+
+
+    -- 🎮 CONTROL
+
+    ROUND((
+      possession_z +
+      possession_quality_z
+    ) / 2, 3) AS control,
+
+
+    -- 💎 DIFFERENTIAL
+
+    ROUND((
+      big_chance_diff_z +
+      offensive_dominance_z
+    ) / 2, 3) AS differential,
+
+
+    -- 🏆 FINAL SCORE
+
+    ROUND(
+      50 + (
+
+        (
+
+          -- ATTACK
+          0.30 * (
+            (
+              shots_inside_box_z +
+              big_chances_z +
+              final_third_entries_z
+            ) / 3
+          ) +
+
+          -- DEFENSE
+          0.25 * (
+            (
+              goals_against_z +
+              big_chances_conceded_z +
+              final_third_entries_conceded_z
+            ) / 3
+          ) +
+
+          -- CONTROL
+          0.20 * (
+            (
+              possession_z +
+              possession_quality_z
+            ) / 2
+          ) +
+
+          -- DIFFERENTIAL
+          0.15 * (
+            (
+              big_chance_diff_z +
+              offensive_dominance_z
+            ) / 2
+          ) +
+
+          -- EFFICIENCY
+          0.10 * (
+            (
+              big_chance_conversion_z +
+              box_shot_ratio_z
+            ) / 2
+          )
+
+        ) *
+
+        -- score compression
+        7 *
+
+        -- reliability adjustment
+        LEAST(matches_played / 20.0, 1)
+
+      ),
+      2
+    ) AS score
+
+  FROM zscore
+
+)
+
+SELECT *
+FROM final
+WHERE matches_played >= 12
+ORDER BY score DESC

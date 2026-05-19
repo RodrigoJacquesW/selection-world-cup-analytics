@@ -1,0 +1,18 @@
+config {
+  type: "table",
+  name: "stg_matches"
+}
+
+SELECT
+  CAST(event_id AS INT64) AS event_id,
+  team,
+  home_team,
+  away_team,
+  home_score,
+  away_score,
+  TIMESTAMP_SECONDS(date) AS match_timestamp,
+  tournament,
+  season,
+  status
+FROM
+  `project-be319738-ee9e-43d7-ada.selections.matches`

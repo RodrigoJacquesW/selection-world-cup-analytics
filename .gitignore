@@ -1,0 +1,40 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Data files
+*.json
+*.csv
+*.parquet
+
+# BigQuery / credentials
+*.pem
+*.key
+credentials.json
+
+# Logs
+*.log
+
+# Power BI temp
+*.pbix.autosave
+
+# Node
+node_modules/
+
+# Dataform generated
+dist/
+target/
+
+# Misc
+*.tmp

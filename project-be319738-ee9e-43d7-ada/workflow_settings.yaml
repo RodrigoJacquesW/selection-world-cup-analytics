@@ -1,0 +1,5 @@
+dataformCoreVersion: 3.0.38
+defaultProject: project-be319738-ee9e-43d7-ada
+defaultLocation: southamerica-east1
+defaultDataset: selections
+defaultAssertionDataset: selections_assertions
