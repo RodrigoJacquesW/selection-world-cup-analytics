@@ -265,6 +265,6 @@ Rather than trying to predict results directly, the model focuses on identifying
 
 ## Rodrigo Wolff
 
-Data Analytics / Analytics Engineering / Sports Analytics
+Data Analytics / Analytics Engineering 
 
-LinkedIn: *(add your profile here)*
+LinkedIn: www.linkedin.com/in/rodrigo-jacques-wolff
