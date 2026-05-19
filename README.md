@@ -193,33 +193,6 @@ Some interesting outcomes from the model:
 
 ---
 
-# Repository Structure
-
-```plaintext
-selection-world-cup-analytics/
-│
-├── scraping/
-│   ├── matches.py
-│   ├── stats.py
-│   └── teams.py
-│
-├── sql/
-│   ├── staging/
-│   ├── intermediate/
-│   └── marts/
-│
-├── presentation/
-│   └── Beyond-FIFA-Rankings.pdf
-│
-├── images/
-│
-├── README.md
-├── requirements.txt
-└── .gitignore
-```
-
----
-
 # Current Limitations
 
 The current version still has important limitations:
