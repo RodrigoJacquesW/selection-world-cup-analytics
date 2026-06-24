@@ -1,44 +1,62 @@
-import requests
+import logging
+import sys
+
 import pandas as pd
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 url = "https://eloratings.net/World.tsv"
 
-print("Baixando dados Elo...")
+logger.info("Downloading Elo ratings from %s", url)
 
-response = requests.get(url)
+response = requests.get(url, timeout=30)
+response.raise_for_status()
+
+if not response.content:
+    logger.error("Empty response from %s", url)
+    sys.exit(1)
 
 with open("elo_ratings.tsv", "wb") as f:
     f.write(response.content)
 
-print("Arquivo baixado.")
+logger.info("File downloaded.")
 
-# ler arquivo
 df = pd.read_csv(
     "elo_ratings.tsv",
     sep="\t",
     header=None
 )
 
-print("Formato detectado:", df.shape)
+logger.info("Detected shape: %s", df.shape)
 
-# extrair apenas colunas essenciais
+expected_columns = {0, 2, 3}
+if not expected_columns.issubset(set(df.columns)):
+    logger.error(
+        "TSV missing expected columns %s; got %s",
+        expected_columns, list(df.columns)
+    )
+    sys.exit(1)
+
 df_clean = pd.DataFrame({
     "rank": df[0],
     "country_code": df[2],
     "elo_rating": df[3]
 })
 
-# salvar bruto
+if df_clean.empty:
+    logger.error("Parsed DataFrame is empty — aborting.")
+    sys.exit(1)
+
 df_clean.to_csv(
     "elo_ratings_raw.csv",
     index=False
 )
 
-print("elo_ratings_raw.csv criado!")
-
-# mostrar preview
-print("\nPrimeiras linhas:")
-print(df_clean.head(10))
-
-print("\nÚltimas linhas:")
-print(df_clean.tail(10))
+logger.info("elo_ratings_raw.csv created with %d rows.", len(df_clean))
+logger.info("First rows:\n%s", df_clean.head(10))
+logger.info("Last rows:\n%s", df_clean.tail(10))

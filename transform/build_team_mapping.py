@@ -1,8 +1,33 @@
+import logging
+import sys
+
 import pandas as pd
 
-# carregar arquivos
-teams = pd.read_csv("teams_from_matches.csv")
-elo = pd.read_csv("elo_ratings_raw.csv")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+try:
+    teams = pd.read_csv("teams_from_matches.csv")
+except FileNotFoundError:
+    logger.error(
+        "teams_from_matches.csv not found — run get_unique_teams.py first."
+    )
+    sys.exit(1)
+
+try:
+    elo = pd.read_csv("elo_ratings_raw.csv")
+except FileNotFoundError:
+    logger.error(
+        "elo_ratings_raw.csv not found — run get_elo_ratings.py first."
+    )
+    sys.exit(1)
+
+if "team_name" not in teams.columns:
+    logger.error("teams_from_matches.csv missing 'team_name' column.")
+    sys.exit(1)
 
 # tabela ISO padrão manual mínima
 iso_map = {
@@ -162,6 +187,12 @@ teams = teams[
 
 missing = teams[teams["country_code"].isna()]
 
+if not missing.empty:
+    logger.warning(
+        "%d teams have no ISO mapping:\n%s",
+        len(missing), missing["team_name"].tolist()
+    )
+
 teams.to_csv(
     "team_mapping_auto.csv",
     index=False
@@ -172,8 +203,5 @@ missing.to_csv(
     index=False
 )
 
-print("team_mapping_auto.csv criado")
-print("team_mapping_missing.csv criado")
-
-print("\nTimes faltando mapping:")
-print(missing)
+logger.info("team_mapping_auto.csv created with %d teams.", len(teams))
+logger.info("team_mapping_missing.csv created with %d teams.", len(missing))
