@@ -1,10 +1,15 @@
+import sys
+sys.path.append("..")
+
 import pandas as pd
 
-# carregar arquivos
-teams = pd.read_csv("teams_from_matches.csv")
-elo = pd.read_csv("elo_ratings_raw.csv")
+from shared.data_io import load_csv_as_df
 
-# tabela ISO padrão manual mínima
+# carregar arquivos
+teams = load_csv_as_df("teams_from_matches.csv")
+elo = load_csv_as_df("elo_ratings_raw.csv")
+
+# tabela ISO padrao manual minima
 iso_map = {
 
     "Albania": "AL",

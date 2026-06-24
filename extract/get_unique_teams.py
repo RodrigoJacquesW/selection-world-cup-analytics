@@ -1,11 +1,11 @@
-import json
+import sys
+sys.path.append("..")
+
 import pandas as pd
 
-# carregar matches
-with open("matches.json") as f:
-    matches = json.load(f)
+from shared.data_io import load_json_as_df
 
-df = pd.DataFrame(matches)
+df = load_json_as_df("matches.json")
 
 # pegar todos os times
 teams = set(df["home_team"]) | set(df["away_team"])

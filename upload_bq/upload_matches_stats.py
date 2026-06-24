@@ -1,33 +1,12 @@
-from google.cloud import bigquery
-import pandas as pd
-import json
+import sys
+sys.path.append("..")
 
-project_id = "project-be319738-ee9e-43d7-ada"
+from shared.data_io import load_json_as_df
+from shared.bq_upload import upload_dataframe_to_bq
 
-# abrir json
-with open("match_stats.json", "r") as f:
-    data = json.load(f)
-
-# dataframe
-df = pd.DataFrame(data)
+df = load_json_as_df("match_stats.json")
 
 print("Linhas:", len(df))
 print("Colunas:", len(df.columns))
 
-client = bigquery.Client(project=project_id)
-
-table_id = f"{project_id}.selections.match_stats"
-
-job_config = bigquery.LoadJobConfig(
-    write_disposition="WRITE_TRUNCATE"
-)
-
-job = client.load_table_from_dataframe(
-    df,
-    table_id,
-    job_config=job_config
-)
-
-job.result()
-
-print("Upload match_stats concluído!")
+upload_dataframe_to_bq(df, "match_stats")

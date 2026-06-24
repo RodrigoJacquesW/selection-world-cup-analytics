@@ -1,19 +1,17 @@
-from playwright.sync_api import sync_playwright
-import json
+import sys
+sys.path.append("..")
+
 import time
 
+from shared.browser import sofascore_browser
+from shared.data_io import load_json, save_json
+
 # carregar matches
-with open("matches.json", "r") as f:
-    matches = json.load(f)
+matches = load_json("matches.json")
 
 all_stats = []
 
-with sync_playwright() as p:
-
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page()
-
-    page.goto("https://www.sofascore.com")
+with sofascore_browser() as page:
 
     for i, match in enumerate(matches):
 
@@ -59,10 +57,7 @@ with sync_playwright() as p:
 
         time.sleep(1)
 
-    browser.close()
-
 # salvar
-with open("match_stats.json", "w") as f:
-    json.dump(all_stats, f, indent=2)
+save_json(all_stats, "match_stats.json")
 
 print("Arquivo match_stats.json criado!")
