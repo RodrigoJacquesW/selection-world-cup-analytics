@@ -1,19 +1,17 @@
-from playwright.sync_api import sync_playwright
-from teams import teams
-import json
+import sys
+sys.path.append("..")
+
 import time
 
+from shared.browser import sofascore_browser
+from shared.data_io import save_json
+from shared.teams_config import TEAMS_SOFASCORE
 
 all_matches = []
 
-with sync_playwright() as p:
+with sofascore_browser() as page:
 
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page()
-
-    page.goto("https://www.sofascore.com")
-
-    for team_name, team_id in teams.items():
+    for team_name, team_id in TEAMS_SOFASCORE.items():
 
         print(f"\nPegando jogos de {team_name}")
 
@@ -68,8 +66,6 @@ with sync_playwright() as p:
 
             time.sleep(1)
 
-    browser.close()
-
 # remover duplicados
 unique_matches = {
     match["event_id"]: match
@@ -78,5 +74,4 @@ unique_matches = {
 
 all_matches = list(unique_matches.values())
 
-with open("matches.json", "w") as f:
-    json.dump(all_matches, f, indent=2)
+save_json(all_matches, "matches.json")

@@ -1,5 +1,10 @@
-import requests
+import sys
+sys.path.append("..")
+
 import pandas as pd
+import requests
+
+from shared.data_io import load_csv_as_df
 
 url = "https://eloratings.net/World.tsv"
 
@@ -13,11 +18,7 @@ with open("elo_ratings.tsv", "wb") as f:
 print("Arquivo baixado.")
 
 # ler arquivo
-df = pd.read_csv(
-    "elo_ratings.tsv",
-    sep="\t",
-    header=None
-)
+df = load_csv_as_df("elo_ratings.tsv", sep="\t", header=None)
 
 print("Formato detectado:", df.shape)
 
@@ -40,5 +41,5 @@ print("elo_ratings_raw.csv criado!")
 print("\nPrimeiras linhas:")
 print(df_clean.head(10))
 
-print("\nÚltimas linhas:")
+print("\nUltimas linhas:")
 print(df_clean.tail(10))

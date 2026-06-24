@@ -1,39 +1,13 @@
-import requests
-import pandas as pd
+import sys
+sys.path.append("..")
+
 import os
 import time
 
-teams = {
-    "Argentina": "ar",
-    "Brazil": "br",
-    "France": "fr",
-    "England": "gb-eng",
-    "Spain": "es",
-    "Germany": "de",
-    "Portugal": "pt",
-    "Netherlands": "nl",
-    "Italy": "it",
-    "Belgium": "be",
-    "Croatia": "hr",
-    "Uruguay": "uy",
-    "Colombia": "co",
-    "Morocco": "ma",
-    "Japan": "jp",
-    "Mexico": "mx",
-    "USA": "us",
-    "Denmark": "dk",
-    "Switzerland": "ch",
-    "Austria": "at",
-    "Serbia": "rs",
-    "Ukraine": "ua",
-    "Poland": "pl",
-    "Sweden": "se",
-    "Norway": "no",
-    "South Korea": "kr",
-    "Senegal": "sn",
-    "Nigeria": "ng",
-    "Ecuador": "ec"
-}
+import pandas as pd
+import requests
+
+from shared.teams_config import TEAMS_FLAG_CODES
 
 # pasta output
 output_dir = "assets/shields"
@@ -41,7 +15,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 rows = []
 
-for team, code in teams.items():
+for team, code in TEAMS_FLAG_CODES.items():
 
     # bandeiras PNG prontas
     url = f"https://flagcdn.com/w320/{code}.png"
@@ -72,12 +46,12 @@ for team, code in teams.items():
             "image_path": path
         })
 
-        print(f"✅ {team}")
+        print(f"OK {team}")
 
         time.sleep(1)
 
     except Exception as e:
-        print(f"❌ {team}: {e}")
+        print(f"FAIL {team}: {e}")
 
 # csv para o power bi
 df = pd.DataFrame(rows)
