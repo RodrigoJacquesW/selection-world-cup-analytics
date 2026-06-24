@@ -5,7 +5,7 @@ url = "https://eloratings.net/World.tsv"
 
 print("Baixando dados Elo...")
 
-response = requests.get(url)
+response = requests.get(url, timeout=30)
 
 with open("elo_ratings.tsv", "wb") as f:
     f.write(response.content)

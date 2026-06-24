@@ -1,8 +1,9 @@
 from google.cloud import bigquery
 import pandas as pd
 import json
+import os
 
-project_id = "project-be319738-ee9e-43d7-ada"
+project_id = os.environ["GCP_PROJECT_ID"]
 
 # abrir json
 with open("match_stats.json", "r") as f:

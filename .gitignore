@@ -36,5 +36,8 @@ node_modules/
 dist/
 target/
 
+# Session/cache files
+*.ses
+
 # Misc
 *.tmp

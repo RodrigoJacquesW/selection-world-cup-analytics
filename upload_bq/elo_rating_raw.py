@@ -1,7 +1,8 @@
 from google.cloud import bigquery
 import pandas as pd
+import os
 
-project_id = "project-be319738-ee9e-43d7-ada"
+project_id = os.environ["GCP_PROJECT_ID"]
 
 # ler CSV
 df = pd.read_csv("elo_ratings_raw.csv")
