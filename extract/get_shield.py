@@ -35,56 +35,47 @@ teams = {
     "Ecuador": "ec"
 }
 
-# pasta output
-output_dir = "assets/shields"
-os.makedirs(output_dir, exist_ok=True)
 
-rows = []
+def build_flag_url(country_code, base_url="https://flagcdn.com/w320"):
+    return f"{base_url}/{country_code}.png"
 
-for team, code in teams.items():
 
-    # bandeiras PNG prontas
-    url = f"https://flagcdn.com/w320/{code}.png"
+def make_file_name(team_name):
+    return team_name.lower().replace(" ", "_") + ".png"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            },
-            timeout=30
-        )
 
-        response.raise_for_status()
+def download_flag(url, output_path, timeout=30):
+    response = requests.get(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=timeout
+    )
+    response.raise_for_status()
+    with open(output_path, "wb") as f:
+        f.write(response.content)
+    return output_path
 
-        file_name = (
-            team.lower()
-            .replace(" ", "_") + ".png"
-        )
 
-        path = os.path.join(output_dir, file_name)
+def download_all_shields(teams_dict, output_dir="assets/shields", delay=1):
+    os.makedirs(output_dir, exist_ok=True)
+    rows = []
 
-        with open(path, "wb") as f:
-            f.write(response.content)
+    for team, code in teams_dict.items():
+        url = build_flag_url(code)
+        try:
+            file_name = make_file_name(team)
+            path = os.path.join(output_dir, file_name)
+            download_flag(url, path)
+            rows.append({"team": team, "image_path": path})
+            print(f"OK {team}")
+            time.sleep(delay)
+        except Exception as e:
+            print(f"FAIL {team}: {e}")
 
-        rows.append({
-            "team": team,
-            "image_path": path
-        })
+    return pd.DataFrame(rows)
 
-        print(f"✅ {team}")
 
-        time.sleep(1)
-
-    except Exception as e:
-        print(f"❌ {team}: {e}")
-
-# csv para o power bi
-df = pd.DataFrame(rows)
-
-df.to_csv(
-    "assets/team_shields.csv",
-    index=False
-)
-
-print("\nCSV criado com sucesso.")
+if __name__ == "__main__":
+    df = download_all_shields(teams)
+    df.to_csv("assets/team_shields.csv", index=False)
+    print("\nCSV criado com sucesso.")
