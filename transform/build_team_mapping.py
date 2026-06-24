@@ -1,10 +1,6 @@
 import pandas as pd
 
-# carregar arquivos
-teams = pd.read_csv("teams_from_matches.csv")
-elo = pd.read_csv("elo_ratings_raw.csv")
-
-# tabela ISO padrão manual mínima
+# tabela ISO padrao manual minima
 iso_map = {
 
     "Albania": "AL",
@@ -148,32 +144,58 @@ iso_map = {
     "Zimbabwe": "ZW"
 }
 
-teams["country_code"] = teams["team_name"].map(iso_map)
-
-teams = teams[
-    ~teams["team_name"].isin([
-        "Basque Country",
-        "Internacional",
-        "KS Lechia Gdańsk",
-        "River Plate",
-        "Valencia"
-    ])
+EXCLUDED_TEAMS = [
+    "Basque Country",
+    "Internacional",
+    "KS Lechia Gdańsk",
+    "River Plate",
+    "Valencia"
 ]
 
-missing = teams[teams["country_code"].isna()]
 
-teams.to_csv(
-    "team_mapping_auto.csv",
-    index=False
-)
+def map_country_codes(teams_df, mapping=None):
+    if mapping is None:
+        mapping = iso_map
+    df = teams_df.copy()
+    df["country_code"] = df["team_name"].map(mapping)
+    return df
 
-missing.to_csv(
-    "team_mapping_missing.csv",
-    index=False
-)
 
-print("team_mapping_auto.csv criado")
-print("team_mapping_missing.csv criado")
+def filter_excluded_teams(teams_df, excluded=None):
+    if excluded is None:
+        excluded = EXCLUDED_TEAMS
+    return teams_df[~teams_df["team_name"].isin(excluded)].copy()
 
-print("\nTimes faltando mapping:")
-print(missing)
+
+def find_missing_mappings(teams_df):
+    return teams_df[teams_df["country_code"].isna()].copy()
+
+
+def build_team_mapping(teams_df, mapping=None, excluded=None):
+    df = map_country_codes(teams_df, mapping)
+    df = filter_excluded_teams(df, excluded)
+    missing = find_missing_mappings(df)
+    return df, missing
+
+
+if __name__ == "__main__":
+    # carregar arquivos
+    teams = pd.read_csv("teams_from_matches.csv")
+
+    teams, missing = build_team_mapping(teams)
+
+    teams.to_csv(
+        "team_mapping_auto.csv",
+        index=False
+    )
+
+    missing.to_csv(
+        "team_mapping_missing.csv",
+        index=False
+    )
+
+    print("team_mapping_auto.csv criado")
+    print("team_mapping_missing.csv criado")
+
+    print("\nTimes faltando mapping:")
+    print(missing)
