@@ -1,7 +1,16 @@
-import requests
-import pandas as pd
+import logging
 import os
+import sys
 import time
+
+import pandas as pd
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 teams = {
     "Argentina": "ar",
@@ -35,15 +44,14 @@ teams = {
     "Ecuador": "ec"
 }
 
-# pasta output
 output_dir = "assets/shields"
 os.makedirs(output_dir, exist_ok=True)
 
 rows = []
+failed_teams = []
 
 for team, code in teams.items():
 
-    # bandeiras PNG prontas
     url = f"https://flagcdn.com/w320/{code}.png"
 
     try:
@@ -72,14 +80,33 @@ for team, code in teams.items():
             "image_path": path
         })
 
-        print(f"✅ {team}")
+        logger.info("Downloaded shield for %s", team)
 
         time.sleep(1)
 
-    except Exception as e:
-        print(f"❌ {team}: {e}")
+    except requests.exceptions.Timeout:
+        logger.error("Timeout downloading shield for %s from %s", team, url)
+        failed_teams.append(team)
+    except requests.exceptions.HTTPError as e:
+        logger.error("HTTP error for %s: %s", team, e)
+        failed_teams.append(team)
+    except requests.exceptions.RequestException as e:
+        logger.error("Request failed for %s: %s", team, e)
+        failed_teams.append(team)
+    except OSError as e:
+        logger.error("Failed to write file for %s: %s", team, e)
+        failed_teams.append(team)
 
-# csv para o power bi
+if failed_teams:
+    logger.warning(
+        "%d/%d shields failed: %s",
+        len(failed_teams), len(teams), failed_teams
+    )
+
+if not rows:
+    logger.error("All shield downloads failed — aborting CSV creation.")
+    sys.exit(1)
+
 df = pd.DataFrame(rows)
 
 df.to_csv(
@@ -87,4 +114,6 @@ df.to_csv(
     index=False
 )
 
-print("\nCSV criado com sucesso.")
+logger.info(
+    "CSV created with %d/%d teams.", len(rows), len(teams)
+)

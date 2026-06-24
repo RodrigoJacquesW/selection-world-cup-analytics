@@ -1,10 +1,20 @@
+import json
+import logging
+import sys
+import time
+
 from playwright.sync_api import sync_playwright
 from teams import teams
-import json
-import time
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
 all_matches = []
+parse_errors = 0
 
 with sync_playwright() as p:
 
@@ -15,7 +25,7 @@ with sync_playwright() as p:
 
     for team_name, team_id in teams.items():
 
-        print(f"\nPegando jogos de {team_name}")
+        logger.info("Fetching matches for %s", team_name)
 
         offset = 0
 
@@ -26,6 +36,10 @@ with sync_playwright() as p:
             response = page.request.get(url)
 
             if response.status != 200:
+                logger.warning(
+                    "Non-200 response (%d) for %s at offset %d — stopping pagination.",
+                    response.status, team_name, offset
+                )
                 break
 
             data = response.json()
@@ -61,14 +75,25 @@ with sync_playwright() as p:
 
                     all_matches.append(match_data)
 
-                except Exception as e:
-                    print("Erro:", e)
+                except KeyError as e:
+                    parse_errors += 1
+                    logger.warning(
+                        "Missing key %s in event %s for %s — skipping event.",
+                        e, event.get("id", "unknown"), team_name
+                    )
 
             offset += 20
 
             time.sleep(1)
 
     browser.close()
+
+if parse_errors:
+    logger.warning("Total events skipped due to parse errors: %d", parse_errors)
+
+if not all_matches:
+    logger.error("No matches were collected — aborting.")
+    sys.exit(1)
 
 # remover duplicados
 unique_matches = {
@@ -78,5 +103,9 @@ unique_matches = {
 
 all_matches = list(unique_matches.values())
 
+logger.info("Collected %d unique matches.", len(all_matches))
+
 with open("matches.json", "w") as f:
     json.dump(all_matches, f, indent=2)
+
+logger.info("matches.json created.")

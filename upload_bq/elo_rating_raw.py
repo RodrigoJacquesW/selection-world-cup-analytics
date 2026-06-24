@@ -1,14 +1,30 @@
-from google.cloud import bigquery
+import logging
+import sys
+
 import pandas as pd
+from google.cloud import bigquery
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 project_id = "project-be319738-ee9e-43d7-ada"
 
-# ler CSV
-df = pd.read_csv("elo_ratings_raw.csv")
+try:
+    df = pd.read_csv("elo_ratings_raw.csv")
+except FileNotFoundError:
+    logger.error("elo_ratings_raw.csv not found — run get_elo_ratings.py first.")
+    sys.exit(1)
 
-print("Linhas:", len(df))
-print("Colunas:", len(df.columns))
-print(df.head())
+if df.empty:
+    logger.error("elo_ratings_raw.csv is empty — nothing to upload.")
+    sys.exit(1)
+
+logger.info("Rows: %d", len(df))
+logger.info("Columns: %d", len(df.columns))
+logger.info("\n%s", df.head())
 
 client = bigquery.Client(project=project_id)
 
@@ -26,4 +42,10 @@ job = client.load_table_from_dataframe(
 
 job.result()
 
-print("Upload elo_ratings_raw concluído!")
+if job.errors:
+    logger.error("BigQuery load errors: %s", job.errors)
+    sys.exit(1)
+
+logger.info(
+    "Upload elo_ratings_raw complete — %d rows loaded.", job.output_rows
+)
