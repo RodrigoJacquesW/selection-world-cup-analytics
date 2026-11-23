@@ -1,0 +1,9 @@
+config {
+  type: "assertion",
+  description: "Every tracked team must appear in the final ranking."
+}
+
+select t.team
+from ${ref("stg_teams")} as t
+left join ${ref("fct_team_score")} as s using (team)
+where s.team is null

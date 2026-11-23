@@ -1,0 +1,70 @@
+config {
+  type: "table",
+  schema: "selections_staging",
+  description: "Model sample: the last 20 finished matches with statistics of each tracked team, from the team's point of view, with the opponent's Elo weight and per-match features.",
+  assertions: {
+    uniqueKey: ["team", "event_id"],
+    nonNull: ["team", "opponent", "event_id", "opponent_elo", "weight"]
+  }
+}
+
+with team_side as (
+
+    -- each match appears twice: once for the home team, once for the away team
+    select
+        m.event_id, m.match_timestamp, m.tournament,
+        m.home_team as team,                    m.away_team as opponent,
+        m.home_score as goals_for,              m.away_score as goals_against,
+        s.total_shots_home as shots,            s.shots_on_target_home as shots_on_target,
+        s.shots_inside_box_home as shots_inside_box,
+        s.big_chances_home as big_chances,      s.big_chances_scored_home as big_chances_scored,
+        s.final_third_entries_home as final_third_entries,
+        s.ball_possession_home as possession,
+        s.passes_home as passes,                s.accurate_passes_home as accurate_passes,
+        s.big_chances_away as big_chances_conceded,
+        s.final_third_entries_away as final_third_entries_conceded
+    from ${ref("stg_matches")} as m
+    join ${ref("stg_match_stats")} as s using (event_id)
+    where m.status = 'finished'
+
+    union all
+
+    select
+        m.event_id, m.match_timestamp, m.tournament,
+        m.away_team, m.home_team,
+        m.away_score, m.home_score,
+        s.total_shots_away, s.shots_on_target_away,
+        s.shots_inside_box_away,
+        s.big_chances_away, s.big_chances_scored_away,
+        s.final_third_entries_away,
+        s.ball_possession_away,
+        s.passes_away, s.accurate_passes_away,
+        s.big_chances_home,
+        s.final_third_entries_home
+    from ${ref("stg_matches")} as m
+    join ${ref("stg_match_stats")} as s using (event_id)
+    where m.status = 'finished'
+
+),
+
+last_20 as (
+    select *
+    from team_side
+    where team in (select team from ${ref("stg_teams")})
+    qualify row_number() over (partition by team order by match_timestamp desc) <= 20
+)
+
+select
+    l.*,
+    e.elo_rating                                            as opponent_elo,
+    e.weight,
+
+    -- per-match features
+    safe_divide(l.big_chances_scored, l.big_chances)        as big_chance_conversion,
+    safe_divide(l.shots_inside_box, l.shots)                as box_shot_ratio,
+    safe_divide(l.accurate_passes, l.passes) * l.possession as possession_quality,
+    l.big_chances - l.big_chances_conceded                  as big_chance_diff,
+    safe_divide(l.big_chances, l.big_chances + l.big_chances_conceded) as offensive_dominance
+from last_20 as l
+left join ${ref("stg_team_elo")} as e
+    on l.opponent = e.team

@@ -1,0 +1,21 @@
+config {
+  type: "view",
+  schema: "selections_staging",
+  description: "Matches of the tracked teams, one row per match.",
+  assertions: {
+    uniqueKey: ["event_id"],
+    nonNull: ["event_id", "home_team", "away_team", "match_timestamp", "status"]
+  }
+}
+
+select
+    cast(event_id as int64)             as event_id,
+    home_team,
+    away_team,
+    home_score,
+    away_score,
+    timestamp_seconds(date)             as match_timestamp,
+    tournament,
+    season,
+    status
+from ${ref("matches")}

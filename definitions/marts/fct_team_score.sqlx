@@ -1,0 +1,82 @@
+config {
+  type: "table",
+  schema: "selections",
+  description: "Final ranking: one row per team with the five pillar scores (z-score averages) and the final score (50 = average of the group).",
+  assertions: {
+    uniqueKey: ["team"],
+    nonNull: ["team", "score", "attack", "defense", "control", "differential", "efficiency"]
+  }
+}
+
+js {
+  const { weighted_avg, zscore, PILLAR_WEIGHTS: w } = require("includes/scoring.js");
+}
+
+with agg as (
+    select
+        team,
+        count(*)                                        as matches_played,
+        -- attack
+        ${weighted_avg("shots_inside_box")}             as shots_inside_box,
+        ${weighted_avg("big_chances")}                  as big_chances,
+        ${weighted_avg("final_third_entries")}          as final_third_entries,
+        -- efficiency
+        ${weighted_avg("big_chance_conversion")}        as big_chance_conversion,
+        ${weighted_avg("box_shot_ratio")}               as box_shot_ratio,
+        -- defense
+        ${weighted_avg("goals_against")}                as goals_against,
+        ${weighted_avg("big_chances_conceded")}         as big_chances_conceded,
+        ${weighted_avg("final_third_entries_conceded")} as final_third_entries_conceded,
+        -- control
+        ${weighted_avg("possession")}                   as possession,
+        ${weighted_avg("possession_quality")}           as possession_quality,
+        -- differential
+        ${weighted_avg("big_chance_diff")}              as big_chance_diff,
+        ${weighted_avg("offensive_dominance")}          as offensive_dominance
+    from ${ref("int_team_matches")}
+    group by team
+),
+
+pillars as (
+    select
+        team,
+        matches_played,
+        (${zscore("shots_inside_box")} + ${zscore("big_chances")} + ${zscore("final_third_entries")}) / 3
+            as attack,
+        (${zscore("big_chance_conversion")} + ${zscore("box_shot_ratio")}) / 2
+            as efficiency,
+        (${zscore("goals_against", false)} + ${zscore("big_chances_conceded", false)} + ${zscore("final_third_entries_conceded", false)}) / 3
+            as defense,
+        (${zscore("possession")} + ${zscore("possession_quality")}) / 2
+            as control,
+        (${zscore("big_chance_diff")} + ${zscore("offensive_dominance")}) / 2
+            as differential
+    from agg
+),
+
+scored as (
+    select
+        *,
+        -- 50 = group average; x7 spreads the scale; teams with < 20 matches are shrunk
+        50 + (
+              ${w.attack} * attack
+            + ${w.defense} * defense
+            + ${w.control} * control
+            + ${w.differential} * differential
+            + ${w.efficiency} * efficiency
+        ) * 7 * least(matches_played / 20.0, 1) as raw_score
+    from pillars
+)
+
+select
+    rank() over (order by raw_score desc)   as ranking,
+    team,
+    matches_played,
+    round(attack, 3)                        as attack,
+    round(defense, 3)                       as defense,
+    round(control, 3)                       as control,
+    round(differential, 3)                  as differential,
+    round(efficiency, 3)                    as efficiency,
+    round(raw_score, 2)                     as score
+from scored
+where matches_played >= 12

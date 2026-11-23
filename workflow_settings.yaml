@@ -1,0 +1,10 @@
+# defaultProject is a placeholder: main.py passes the real one from GCP_PROJECT_ID (.env)
+# via --default-database. To run the CLI by hand:
+#   dataform run --default-database <your-project-id>
+dataformCoreVersion: 3.0.38
+defaultProject: your-gcp-project-id
+defaultLocation: US
+defaultDataset: selections
+defaultAssertionDataset: selections_assertions
+vars:
+  raw_dataset: selections_raw

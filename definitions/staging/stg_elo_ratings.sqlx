@@ -1,0 +1,16 @@
+config {
+  type: "view",
+  schema: "selections_staging",
+  description: "World Football Elo Ratings at the time of the snapshot.",
+  assertions: {
+    uniqueKey: ["elo_code"],
+    nonNull: ["elo_code", "elo_rating"]
+  }
+}
+
+select
+    rank            as elo_rank,
+    elo_code,
+    elo_rating
+from ${ref("elo_ratings")}
+where elo_code != ''

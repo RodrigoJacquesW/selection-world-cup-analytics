@@ -1,0 +1,55 @@
+config {
+  type: "view",
+  schema: "selections_staging",
+  description: "Match statistics used by the model, cast to integers. Possession arrives as text ('55%').",
+  assertions: {
+    uniqueKey: ["event_id"],
+    nonNull: ["event_id"],
+    rowConditions: [
+      "ball_possession_home is null or ball_possession_home between 0 and 100",
+      "ball_possession_home + ball_possession_away is null or ball_possession_home + ball_possession_away between 99 and 101"
+    ]
+  }
+}
+
+select
+    cast(event_id as int64)                                     as event_id,
+    safe_cast(replace(ball_possession_home, '%', '') as int64) as ball_possession_home,
+    safe_cast(replace(ball_possession_away, '%', '') as int64) as ball_possession_away,
+    safe_cast(big_chances_home as int64)                       as big_chances_home,
+    safe_cast(big_chances_away as int64)                       as big_chances_away,
+    safe_cast(big_chances_scored_home as int64)                as big_chances_scored_home,
+    safe_cast(big_chances_scored_away as int64)                as big_chances_scored_away,
+    safe_cast(big_chances_missed_home as int64)                as big_chances_missed_home,
+    safe_cast(big_chances_missed_away as int64)                as big_chances_missed_away,
+    safe_cast(total_shots_home as int64)                       as total_shots_home,
+    safe_cast(total_shots_away as int64)                       as total_shots_away,
+    safe_cast(shots_on_target_home as int64)                   as shots_on_target_home,
+    safe_cast(shots_on_target_away as int64)                   as shots_on_target_away,
+    safe_cast(shots_off_target_home as int64)                  as shots_off_target_home,
+    safe_cast(shots_off_target_away as int64)                  as shots_off_target_away,
+    safe_cast(blocked_shots_home as int64)                     as blocked_shots_home,
+    safe_cast(blocked_shots_away as int64)                     as blocked_shots_away,
+    safe_cast(shots_inside_box_home as int64)                  as shots_inside_box_home,
+    safe_cast(shots_inside_box_away as int64)                  as shots_inside_box_away,
+    safe_cast(shots_outside_box_home as int64)                 as shots_outside_box_home,
+    safe_cast(shots_outside_box_away as int64)                 as shots_outside_box_away,
+    safe_cast(goalkeeper_saves_home as int64)                  as goalkeeper_saves_home,
+    safe_cast(goalkeeper_saves_away as int64)                  as goalkeeper_saves_away,
+    safe_cast(corner_kicks_home as int64)                      as corner_kicks_home,
+    safe_cast(corner_kicks_away as int64)                      as corner_kicks_away,
+    safe_cast(fouls_home as int64)                             as fouls_home,
+    safe_cast(fouls_away as int64)                             as fouls_away,
+    safe_cast(yellow_cards_home as int64)                      as yellow_cards_home,
+    safe_cast(yellow_cards_away as int64)                      as yellow_cards_away,
+    safe_cast(offsides_home as int64)                          as offsides_home,
+    safe_cast(offsides_away as int64)                          as offsides_away,
+    safe_cast(passes_home as int64)                            as passes_home,
+    safe_cast(passes_away as int64)                            as passes_away,
+    safe_cast(accurate_passes_home as int64)                   as accurate_passes_home,
+    safe_cast(accurate_passes_away as int64)                   as accurate_passes_away,
+    safe_cast(tackles_home as int64)                           as tackles_home,
+    safe_cast(tackles_away as int64)                           as tackles_away,
+    safe_cast(final_third_entries_home as int64)               as final_third_entries_home,
+    safe_cast(final_third_entries_away as int64)               as final_third_entries_away
+from ${ref("match_stats")}

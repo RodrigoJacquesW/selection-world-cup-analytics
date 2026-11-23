@@ -1,0 +1,20 @@
+config {
+  type: "assertion",
+  description: "eloratings.net codes are mostly ISO 3166, with exceptions. Using the ISO code for these teams silently picks another country (SC = Seychelles, NI = Nicaragua) and gives the opponent a near-zero weight. This test pins the known exceptions."
+}
+
+with expected as (
+    select * from unnest([
+        struct('England' as team, 'EN' as elo_code),
+        ('Scotland', 'SQ'),
+        ('Wales', 'WA'),
+        ('Northern Ireland', 'EI'),
+        ('Kosovo', 'KO'),
+        ('North Macedonia', 'NM')
+    ])
+)
+
+select e.team, e.elo_code as expected_code, c.elo_code as actual_code
+from expected as e
+join ${ref("stg_team_elo")} as c using (team)
+where c.elo_code != e.elo_code

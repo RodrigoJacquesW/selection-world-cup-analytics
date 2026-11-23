@@ -1,0 +1,10 @@
+config {
+  type: "assertion",
+  description: "Every tracked team must have exactly 20 matches in the sample."
+}
+
+select t.team, count(m.event_id) as matches
+from ${ref("stg_teams")} as t
+left join ${ref("int_team_matches")} as m using (team)
+group by t.team
+having matches != 20

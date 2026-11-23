@@ -1,40 +1,31 @@
-# Python
+# Environments and caches
+.venv/
 venv/
 __pycache__/
 *.pyc
-
-# Environment
-.env
-
-# IDE
+node_modules/
 .vscode/
 .idea/
+*.log
+*.tmp
+
+# Credentials and local config
+.env
+.df-credentials.json
+*credentials*.json
+*service-account*.json
+*.pem
+*.key
+
+# Local only
+_local_old/
+requirements-venv-congelado.txt
+powerbi/*.pptx
+powerbi/*.docx
+*.pbix.autosave
+*:Zone.Identifier
 
 # OS
 .DS_Store
-
-# Data files
-*.json
-*.csv
-*.parquet
-
-# BigQuery / credentials
-*.pem
-*.key
-credentials.json
-
-# Logs
-*.log
-
-# Power BI temp
-*.pbix.autosave
-
-# Node
-node_modules/
-
-# Dataform generated
-dist/
-target/
-
-# Misc
-*.tmp
+Thumbs.db
+powerbi/*.pdf

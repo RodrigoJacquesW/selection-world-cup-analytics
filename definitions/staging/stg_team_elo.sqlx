@@ -1,0 +1,18 @@
+config {
+  type: "view",
+  schema: "selections_staging",
+  description: "Elo rating per team name (as written by SofaScore) and its weight in the model: (elo / 2000)^4.",
+  assertions: {
+    uniqueKey: ["team"],
+    nonNull: ["team", "elo_rating", "weight"]
+  }
+}
+
+select
+    c.team,
+    c.elo_code,
+    e.elo_rating,
+    pow(e.elo_rating / 2000, 4)     as weight
+from ${ref("elo_codes")} as c
+left join ${ref("stg_elo_ratings")} as e
+    using (elo_code)

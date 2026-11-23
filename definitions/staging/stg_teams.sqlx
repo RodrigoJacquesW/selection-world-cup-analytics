@@ -1,0 +1,15 @@
+config {
+  type: "view",
+  schema: "selections_staging",
+  description: "The national teams being ranked.",
+  assertions: {
+    uniqueKey: ["team"],
+    nonNull: ["team", "sofascore_id"]
+  }
+}
+
+select
+    team,
+    sofascore_id,
+    flag_code
+from ${ref("teams")}
